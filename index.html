@@ -7,7 +7,7 @@
 <style>
   :root {
     --bg: #0f1115; --card: #181b22; --border: #2a2f3a; --text: #e6e8ec;
-    --muted: #8b93a3; --accent: #ffa116; --link: #7cb7ff;
+    --muted: #8b93a3; --accent: #ffa116; --link: #7cb7ff; --good: #2cbb5d;
   }
   * { box-sizing: border-box; }
   body {
@@ -16,7 +16,23 @@
   }
   .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 64px; }
   h1 { margin: 0 0 4px; font-size: 1.8rem; }
-  .sub { color: var(--muted); margin: 0 0 28px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+
+  nav { display: flex; gap: 8px; margin-bottom: 24px; }
+  nav button {
+    background: var(--card); color: var(--muted); border: 1px solid var(--border);
+    font-weight: 500;
+  }
+  nav button.active { color: var(--text); border-color: var(--accent); }
+
+  button {
+    font: inherit; padding: 10px 14px; border-radius: 8px; cursor: pointer;
+    background: var(--accent); color: #111; border: none; font-weight: 600;
+  }
+  button:hover { filter: brightness(1.1); }
+  button.ghost {
+    background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 500;
+  }
 
   .random {
     background: var(--card); border: 1px solid var(--border); border-radius: 12px;
@@ -30,14 +46,6 @@
   .random .num a:hover { text-decoration: underline; }
   .random .topic { color: var(--muted); min-height: 1.5em; margin-bottom: 16px; }
   .controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-  button {
-    font: inherit; padding: 10px 14px; border-radius: 8px;
-    border: 1px solid var(--border); background: var(--bg); color: var(--text);
-  }
-  button {
-    background: var(--accent); color: #111; border: none; font-weight: 600; cursor: pointer;
-  }
-  button:hover { filter: brightness(1.1); }
 
   .topic-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
@@ -46,28 +54,92 @@
   .topic-card h2 { font-size: 1rem; margin: 0 0 8px; }
   .topic-card h2 span { color: var(--muted); font-weight: 400; margin-right: 6px; }
   .links { display: flex; flex-wrap: wrap; gap: 8px; }
-  .links a {
-    color: var(--link); text-decoration: none; padding: 4px 10px;
-    border: 1px solid var(--border); border-radius: 6px; font-variant-numeric: tabular-nums;
+
+  .chip {
+    display: inline-flex; align-items: stretch; border: 1px solid var(--border);
+    border-radius: 6px; overflow: hidden;
   }
-  .links a:hover { border-color: var(--link); background: rgba(124,183,255,.08); }
-  .links a.hit { border-color: var(--accent); color: var(--accent); }
+  .chip a {
+    color: var(--link); text-decoration: none; padding: 4px 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .chip a:hover { background: rgba(124,183,255,.08); }
+  .chip .cnt {
+    padding: 4px 8px; color: var(--muted); border-left: 1px solid var(--border);
+    font-variant-numeric: tabular-nums; min-width: 28px; text-align: center;
+  }
+  .chip.done { border-color: rgba(44,187,93,.5); }
+  .chip.done .cnt { color: var(--good); }
+  .chip .plus {
+    background: transparent; color: var(--muted); border: none; border-left: 1px solid var(--border);
+    border-radius: 0; padding: 4px 9px; font-weight: 600;
+  }
+  .chip .plus:hover { color: var(--accent); background: rgba(255,161,22,.08); }
+  .chip.hit { border-color: var(--accent); }
+
+  /* History */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+  }
+  .stat .v { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat .l { color: var(--muted); font-size: .85rem; }
+  h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: .92rem; }
+  th { color: var(--muted); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  td a { color: var(--link); text-decoration: none; }
+  td.num { font-variant-numeric: tabular-nums; }
+  td .del {
+    background: transparent; color: var(--muted); border: none; padding: 0 6px; font-weight: 400;
+  }
+  td .del:hover { color: #ff6b6b; }
+  .empty { color: var(--muted); padding: 16px; text-align: center; }
+  .hist-actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+  .note { color: var(--muted); font-size: .85rem; margin-top: 10px; }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>LeetCode Patterns</h1>
-  <p class="sub">27 patterns · click a number to open the problem on LeetCode</p>
+  <p class="sub">27 patterns · click a number to open it, <b>+</b> to log an attempt</p>
 
-  <section class="random">
-    <div class="num" id="rNum">?</div>
-    <div class="topic" id="rTopic">Hit the button to get a random problem number</div>
-    <div class="controls">
-      <button id="go">Random question</button>
+  <nav>
+    <button id="tabProblems" class="active">Problems</button>
+    <button id="tabHistory">History</button>
+  </nav>
+
+  <div id="viewProblems">
+    <section class="random">
+      <div class="num" id="rNum">?</div>
+      <div class="topic" id="rTopic">Hit the button to get a random problem number</div>
+      <div class="controls">
+        <button id="go">Random question</button>
+        <button id="logPick" class="ghost" hidden>+ Log attempt</button>
+      </div>
+    </section>
+    <main id="list"></main>
+  </div>
+
+  <div id="viewHistory" hidden>
+    <div class="stats" id="stats"></div>
+
+    <h3>Attempts per problem</h3>
+    <div id="perProblem"></div>
+
+    <h3>Recent activity</h3>
+    <div id="recent"></div>
+
+    <div class="hist-actions">
+      <button class="ghost" id="exportBtn">Export JSON</button>
+      <button class="ghost" id="importBtn">Import JSON</button>
+      <button class="ghost" id="resetBtn">Reset history</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
     </div>
-  </section>
-
-  <main id="list"></main>
+    <p class="note">History is saved in this browser only. Use Export / Import to move it to another device.</p>
+  </div>
 </div>
 
 <script>
@@ -168,34 +240,171 @@ const SLUGS = {
 };
 
 const url = n => `https://leetcode.com/problems/${SLUGS[n]}/`;
+const titleOf = n => SLUGS[n].split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
 
+// number -> topic name(s)
+const TOPIC_OF = {};
+TOPICS.forEach(([name, nums]) => nums.forEach(n => {
+  TOPIC_OF[n] = TOPIC_OF[n] ? TOPIC_OF[n] + " / " + name : name;
+}));
+const ALL = Object.keys(TOPIC_OF).map(Number);
+
+/* ---------- storage ---------- */
+const KEY = "lc-patterns-history";
+let history = [];   // [{ n: 560, t: 1731220000000 }, ...]
+try { history = JSON.parse(localStorage.getItem(KEY)) || []; } catch { history = []; }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(history)); } catch {} }
+
+function counts() {
+  const c = {};
+  history.forEach(h => { c[h.n] = (c[h.n] || 0) + 1; });
+  return c;
+}
+
+function logAttempt(n) {
+  history.push({ n, t: Date.now() });
+  save(); render();
+}
+
+/* ---------- problems view ---------- */
 const list = document.getElementById("list");
-
 TOPICS.forEach(([name, nums], i) => {
   const card = document.createElement("div");
   card.className = "topic-card";
   card.innerHTML = `<h2><span>${i + 1}.</span>${name}</h2><div class="links">` +
-    nums.map(n => `<a href="${url(n)}" target="_blank" rel="noopener" data-n="${n}">${n}</a>`).join("") +
+    nums.map(n => `<span class="chip" data-n="${n}">` +
+      `<a href="${url(n)}" target="_blank" rel="noopener" title="${titleOf(n)}">${n}</a>` +
+      `<span class="cnt">0</span>` +
+      `<button class="plus" title="Log an attempt">+</button></span>`).join("") +
     `</div>`;
   list.appendChild(card);
 });
 
-const pool = TOPICS.flatMap(([name, nums]) => nums.map(n => [n, name]));
+list.addEventListener("click", e => {
+  if (e.target.classList.contains("plus")) {
+    logAttempt(Number(e.target.closest(".chip").dataset.n));
+  }
+});
+
 let last = null;
 document.getElementById("go").addEventListener("click", () => {
-
   let pick;
-  do { pick = pool[Math.floor(Math.random() * pool.length)]; }
-  while (pool.length > 1 && pick[0] === last);
-  last = pick[0];
+  do { pick = ALL[Math.floor(Math.random() * ALL.length)]; }
+  while (ALL.length > 1 && pick === last);
+  last = pick;
 
   document.getElementById("rNum").innerHTML =
-    `<a href="${url(pick[0])}" target="_blank" rel="noopener">#${pick[0]}</a>`;
-  document.getElementById("rTopic").textContent = pick[1];
+    `<a href="${url(pick)}" target="_blank" rel="noopener">#${pick}</a>`;
+  document.getElementById("rTopic").textContent = `${titleOf(pick)} · ${TOPIC_OF[pick]}`;
+  document.getElementById("logPick").hidden = false;
 
-  document.querySelectorAll(".links a.hit").forEach(a => a.classList.remove("hit"));
-  document.querySelectorAll(`.links a[data-n="${pick[0]}"]`).forEach(a => a.classList.add("hit"));
+  document.querySelectorAll(".chip.hit").forEach(c => c.classList.remove("hit"));
+  document.querySelectorAll(`.chip[data-n="${pick}"]`).forEach(c => c.classList.add("hit"));
 });
+document.getElementById("logPick").addEventListener("click", () => { if (last) logAttempt(last); });
+
+/* ---------- history view ---------- */
+const fmt = t => new Date(t).toLocaleString(undefined, {
+  day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+});
+const isToday = t => new Date(t).toDateString() === new Date().toDateString();
+
+function render() {
+  const c = counts();
+
+  // counters on chips
+  document.querySelectorAll(".chip").forEach(chip => {
+    const v = c[chip.dataset.n] || 0;
+    chip.querySelector(".cnt").textContent = v;
+    chip.classList.toggle("done", v > 0);
+  });
+
+  // stats
+  const tried = Object.keys(c).length;
+  const today = history.filter(h => isToday(h.t)).length;
+  const days = new Set(history.map(h => new Date(h.t).toDateString()));
+  let streak = 0;
+  const d = new Date();
+  if (!days.has(d.toDateString())) d.setDate(d.getDate() - 1); // streak can continue from yesterday
+  while (days.has(d.toDateString())) { streak++; d.setDate(d.getDate() - 1); }
+
+  document.getElementById("stats").innerHTML = [
+    [history.length, "Total attempts"],
+    [`${tried} / ${ALL.length}`, "Problems tried"],
+    [today, "Attempts today"],
+    [streak, "Day streak"],
+  ].map(([v, l]) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+
+  // per-problem table
+  const lastAt = {};
+  history.forEach(h => { lastAt[h.n] = Math.max(lastAt[h.n] || 0, h.t); });
+  const rows = Object.keys(c).map(Number).sort((a, b) => c[b] - c[a] || lastAt[b] - lastAt[a]);
+  document.getElementById("perProblem").innerHTML = rows.length
+    ? `<table><tr><th>#</th><th>Problem</th><th>Topic</th><th>Attempts</th><th>Last attempt</th></tr>` +
+      rows.map(n => `<tr><td class="num"><a href="${url(n)}" target="_blank" rel="noopener">${n}</a></td>` +
+        `<td>${titleOf(n)}</td><td>${TOPIC_OF[n]}</td><td class="num">${c[n]}</td>` +
+        `<td>${fmt(lastAt[n])}</td></tr>`).join("") + `</table>`
+    : `<table><tr><td class="empty">No attempts yet. Press + next to a problem to log one.</td></tr></table>`;
+
+  // recent log
+  const recent = history.map((h, i) => ({ ...h, i })).reverse().slice(0, 50);
+  document.getElementById("recent").innerHTML = recent.length
+    ? `<table><tr><th>When</th><th>#</th><th>Problem</th><th></th></tr>` +
+      recent.map(h => `<tr><td>${fmt(h.t)}</td>` +
+        `<td class="num"><a href="${url(h.n)}" target="_blank" rel="noopener">${h.n}</a></td>` +
+        `<td>${titleOf(h.n)}</td>` +
+        `<td style="text-align:right"><button class="del" data-i="${h.i}" title="Remove this entry">✕</button></td></tr>`).join("") +
+      `</table>`
+    : `<table><tr><td class="empty">Nothing here yet.</td></tr></table>`;
+}
+
+document.getElementById("recent").addEventListener("click", e => {
+  if (e.target.classList.contains("del")) {
+    history.splice(Number(e.target.dataset.i), 1);
+    save(); render();
+  }
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Delete all attempt history? This can't be undone.")) {
+    history = []; save(); render();
+  }
+});
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "leetcode-history.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+const importFile = document.getElementById("importFile");
+document.getElementById("importBtn").addEventListener("click", () => importFile.click());
+importFile.addEventListener("change", async () => {
+  const f = importFile.files[0];
+  if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (!Array.isArray(data)) throw 0;
+    history = data.filter(h => SLUGS[h.n] && typeof h.t === "number");
+    save(); render();
+  } catch { alert("That file doesn't look like an exported history."); }
+  importFile.value = "";
+});
+
+/* ---------- tabs ---------- */
+const tabs = { Problems: document.getElementById("tabProblems"), History: document.getElementById("tabHistory") };
+function show(name) {
+  document.getElementById("viewProblems").hidden = name !== "Problems";
+  document.getElementById("viewHistory").hidden = name !== "History";
+  Object.entries(tabs).forEach(([k, b]) => b.classList.toggle("active", k === name));
+}
+tabs.Problems.addEventListener("click", () => show("Problems"));
+tabs.History.addEventListener("click", () => show("History"));
+
+render();
 </script>
 </body>
 </html>
