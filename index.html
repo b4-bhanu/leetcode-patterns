@@ -70,11 +70,6 @@
   }
   .chip.done { border-color: rgba(44,187,93,.5); }
   .chip.done .cnt { color: var(--good); }
-  .chip .plus {
-    background: transparent; color: var(--muted); border: none; border-left: 1px solid var(--border);
-    border-radius: 0; padding: 4px 9px; font-weight: 600;
-  }
-  .chip .plus:hover { color: var(--accent); background: rgba(255,161,22,.08); }
   .chip.hit { border-color: var(--accent); }
 
   /* History */
@@ -104,7 +99,7 @@
 <body>
 <div class="wrap">
   <h1>LeetCode Patterns</h1>
-  <p class="sub">27 patterns · click a number to open it, <b>+</b> to log an attempt</p>
+  <p class="sub">27 patterns · click a number to open it · every click counts as an attempt</p>
 
   <nav>
     <button id="tabProblems" class="active">Problems</button>
@@ -117,7 +112,6 @@
       <div class="topic" id="rTopic">Hit the button to get a random problem number</div>
       <div class="controls">
         <button id="go">Random question</button>
-        <button id="logPick" class="ghost" hidden>+ Log attempt</button>
       </div>
     </section>
     <main id="list"></main>
@@ -273,18 +267,21 @@ TOPICS.forEach(([name, nums], i) => {
   card.className = "topic-card";
   card.innerHTML = `<h2><span>${i + 1}.</span>${name}</h2><div class="links">` +
     nums.map(n => `<span class="chip" data-n="${n}">` +
-      `<a href="${url(n)}" target="_blank" rel="noopener" title="${titleOf(n)}">${n}</a>` +
-      `<span class="cnt">0</span>` +
-      `<button class="plus" title="Log an attempt">+</button></span>`).join("") +
+      `<a class="plink" data-n="${n}" href="${url(n)}" target="_blank" rel="noopener" title="${titleOf(n)}">${n}</a>` +
+      `<span class="cnt">0</span></span>`).join("") +
     `</div>`;
   list.appendChild(card);
 });
 
-list.addEventListener("click", e => {
-  if (e.target.classList.contains("plus")) {
-    logAttempt(Number(e.target.closest(".chip").dataset.n));
-  }
-});
+// Any click on a problem link (left or middle click) logs an attempt
+function onProblemClick(e) {
+  const a = e.target.closest("a.plink");
+  if (!a) return;
+  if (e.type === "auxclick" && e.button !== 1) return;
+  logAttempt(Number(a.dataset.n));
+}
+document.addEventListener("click", onProblemClick);
+document.addEventListener("auxclick", onProblemClick);
 
 let last = null;
 document.getElementById("go").addEventListener("click", () => {
@@ -294,14 +291,12 @@ document.getElementById("go").addEventListener("click", () => {
   last = pick;
 
   document.getElementById("rNum").innerHTML =
-    `<a href="${url(pick)}" target="_blank" rel="noopener">#${pick}</a>`;
+    `<a class="plink" data-n="${pick}" href="${url(pick)}" target="_blank" rel="noopener">#${pick}</a>`;
   document.getElementById("rTopic").textContent = `${titleOf(pick)} · ${TOPIC_OF[pick]}`;
-  document.getElementById("logPick").hidden = false;
 
   document.querySelectorAll(".chip.hit").forEach(c => c.classList.remove("hit"));
   document.querySelectorAll(`.chip[data-n="${pick}"]`).forEach(c => c.classList.add("hit"));
 });
-document.getElementById("logPick").addEventListener("click", () => { if (last) logAttempt(last); });
 
 /* ---------- history view ---------- */
 const fmt = t => new Date(t).toLocaleString(undefined, {
@@ -344,7 +339,7 @@ function render() {
       rows.map(n => `<tr><td class="num"><a href="${url(n)}" target="_blank" rel="noopener">${n}</a></td>` +
         `<td>${titleOf(n)}</td><td>${TOPIC_OF[n]}</td><td class="num">${c[n]}</td>` +
         `<td>${fmt(lastAt[n])}</td></tr>`).join("") + `</table>`
-    : `<table><tr><td class="empty">No attempts yet. Press + next to a problem to log one.</td></tr></table>`;
+    : `<table><tr><td class="empty">No attempts yet. Click a problem to start.</td></tr></table>`;
 
   // recent log
   const recent = history.map((h, i) => ({ ...h, i })).reverse().slice(0, 50);
